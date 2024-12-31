@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  Button,
-  FlatList,
-  View,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, FlatList, View } from "react-native";
 import {
   addTask,
   getTasks,
   deleteTask,
   toggleTaskCompletion,
 } from "../services/taskService";
+
+import {
+  Provider as PaperProvider,
+  TextInput,
+  Button,
+  Card,
+  Title,
+  IconButton,
+} from "react-native-paper";
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
@@ -54,89 +55,75 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>ToDo App</Text>
-
-      {/* 新しいタスクを追加 */}
-      <View style={styles.inputContainer}>
+    <PaperProvider>
+      <View style={styles.container}>
         <TextInput
-          style={styles.input}
-          placeholder="Add a new task"
+          label="New Task"
           value={newTask}
           onChangeText={setNewTask}
+          style={styles.input}
         />
-        <Button title="Add" onPress={handleAddTask} />
+        <Button
+          mode="contained"
+          onPress={handleAddTask}
+          style={styles.addButton}
+        >
+          Add Task
+        </Button>
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <Card style={styles.card}>
+              <Card.Title
+                title={item.name}
+                titleStyle={{
+                  textDecorationLine: item.completed ? "line-through" : "none",
+                }}
+                right={(props) => (
+                  <View style={styles.actions}>
+                    <IconButton
+                      {...props}
+                      icon="check"
+                      onPress={() =>
+                        handleToggleCompletion(item.id, item.completed)
+                      }
+                    />
+                    <IconButton
+                      {...props}
+                      icon="delete"
+                      onPress={() => handleDeleteTask(item.id)}
+                    />
+                  </View>
+                )}
+              />
+            </Card>
+          )}
+        />
       </View>
-
-      {/* タスクリスト */}
-      <FlatList
-        data={tasks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.taskContainer}>
-            <TouchableOpacity
-              onPress={() => handleToggleCompletion(item.id, item.completed)}
-            >
-              <Text
-                style={[
-                  styles.taskText,
-                  item.completed && styles.completedTask,
-                ]}
-              >
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-            <Button title="Delete" onPress={() => handleDeleteTask(item.id)} />
-          </View>
-        )}
-      />
-    </View>
+    </PaperProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#f8f8f8",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  inputContainer: {
-    flexDirection: "row",
-    marginBottom: 20,
+    padding: 16,
+    backgroundColor: "#f5f5f5",
   },
   input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginRight: 10,
+    marginBottom: 16,
   },
-  taskContainer: {
+  addButton: {
+    marginBottom: 16,
+  },
+  card: {
+    marginBottom: 8,
+    marginHorizontal: 8, // 両端のマージンを追加
+    borderRadius: 8, // 角を丸くするオプション（任意）
+    elevation: 2, // シャドウの追加（Android用）
+  },
+  actions: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "#ffffff",
-    marginBottom: 10,
-    borderRadius: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  taskText: {
-    fontSize: 16,
-  },
-  completedTask: {
-    textDecorationLine: "line-through", // 完了したタスクに線を引く
-    color: "#888", // 完了したタスクの色を薄くする
   },
 });
