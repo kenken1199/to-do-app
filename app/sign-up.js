@@ -1,18 +1,18 @@
 import React, { useState } from "react";
 import { View, TextInput, Button, Text, Alert, StyleSheet } from "react-native";
-import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { useRouter } from "expo-router";
 
-export default function SignInScreen() {
+export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
   const auth = getAuth();
-  const handleSignIn = async () => {
+  const handleSignUp = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/home");
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.push("/home");
     } catch (error) {
       Alert.alert("Error", error.message);
     }
@@ -20,7 +20,7 @@ export default function SignInScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign In</Text>
+      <Text style={styles.title}>Sign Up</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -34,9 +34,9 @@ export default function SignInScreen() {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title="Sign In" onPress={handleSignIn} />
-      <Text style={styles.link} onPress={() => router.push("/sign-up")}>
-        Don't have an account? Sign Up
+      <Button title="Sign Up" onPress={handleSignUp} />
+      <Text style={styles.link} onPress={() => router.push("/")}>
+        Already have an account? Sign In
       </Text>
     </View>
   );
