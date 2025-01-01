@@ -7,8 +7,9 @@ import {
   StyleSheet,
   FlatList,
   Alert,
+  TouchableOpacity,
 } from "react-native";
-import { ref, push, onValue, remove } from "firebase/database";
+import { ref, push, onValue, remove, update } from "firebase/database";
 import { signOut, getAuth } from "firebase/auth";
 import { database, auth } from "../firebaseConfig";
 import { useRouter } from "expo-router";
@@ -20,19 +21,40 @@ export default function HomeScreen() {
 
   const user = getAuth().currentUser;
 
+  // Firebaseからタスクを読み込む
   useEffect(() => {
-    if (user) {
-      const tasksRef = ref(database, "tasks/" + user.uid);
-      const unsubscribe = onValue(tasksRef, (snapshot) => {
-        const data = snapshot.val();
-        const loadedTasks = data
-          ? Object.keys(data).map((key) => ({ id: key, text: data[key].text }))
-          : [];
-        setTasks(loadedTasks);
-        return () => unsubscribe();
-      });
+    const tasksRef = ref(database, `tasks/${user.uid}`);
+    const unsubscribe = onValue(tasksRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const loadedTasks = Object.keys(data).map((key) => ({
+          id: key,
+          ...data[key],
+        }));
+        setTasks(loadedTasks); // 状態更新
+      } else {
+        setTasks([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user.uid]);
+
+  // タスクの状態を更新する関数
+  const toggleTaskCompletion = async (taskId, currentCompleted) => {
+    try {
+      const taskRef = ref(database, `tasks/${user.uid}/${taskId}`);
+      await update(taskRef, { completed: !currentCompleted });
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId ? { ...task, completed: !currentCompleted } : task
+        )
+      );
+    } catch (error) {
+      console.error("Error updating task completion:", error);
     }
-  }, []);
+  };
 
   const handleAddTask = async () => {
     if (newTask.trim() === "") {
@@ -84,7 +106,19 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.taskItem}>
-            <Text style={styles.taskText}>{item.text}</Text>
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={() => toggleTaskCompletion(item.id, item.completed)}
+            >
+              <Text
+                style={[
+                  styles.taskText,
+                  item.completed && styles.completedTask,
+                ]}
+              >
+                {item.text}
+              </Text>
+            </TouchableOpacity>
             <Button
               title="Delete"
               onPress={() => handleDeleteTask(item.id)}
@@ -117,5 +151,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 10,
   },
-  taskText: { fontSize: 16 },
+  taskText: {
+    fontSize: 18,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+  },
+
+  completedTask: {
+    textDecorationLine: "line-through",
+    color: "gray",
+  },
 });
